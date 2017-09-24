@@ -10,8 +10,8 @@ TDM_NAMESPACE
 TokenPrivateData::TokenPrivateData(int nodes, bool created, bool owned) :
     m_nodes(nodes), m_created(created), m_owned(owned), m_locked(false)
 {
-    m_ln = new u32[nodes];
-    m_rn = new u32[nodes];
+    m_ln = new u32[nodes]();
+    m_rn = new u32[nodes]();
 }
 
 TokenPrivateData::~TokenPrivateData()

@@ -48,11 +48,11 @@ private:
     u32 m_ourNodeId;
     TcpManager *m_tcp;
     DataMarshaller *m_marshaller;
+    std::set<String> m_pendingGrants;
     HashMap<u32, SharedPtr<Client>> m_nodes;
     HashMap<String, UniquePtr<TokenPrivateData>> m_tokenPrivate;
     HashMap<String, SharedPtr<Token>> m_tokens;
     std::set<String> m_pendingRequests;
-    std::set<String> m_pendingGrants;
 };
 
 END_NAMESPACE

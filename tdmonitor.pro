@@ -1,4 +1,6 @@
 TEMPLATE = subdirs
 CONFIG += ordered
 
-SUBDIRS = lib
+SUBDIRS = lib prodconsumer
+
+prodconsumer.depends = lib

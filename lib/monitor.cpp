@@ -187,6 +187,7 @@ void Monitor::create()
 
     SharedPtr<Token> token = std::make_shared<Token>(m_id, signals, load, save);
 
+    m_token = token;
     m_cluster.sendCreateRequest(token);
 }
 

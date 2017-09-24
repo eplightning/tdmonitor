@@ -2,12 +2,19 @@
 
 #include <tdmonitor/types.h>
 
+#include <set>
+
 TDM_NAMESPACE
 
 ClusterLoop::ClusterLoop(int nodes, u32 ourNodeId, TcpManager *tcp, DataMarshaller *marshaller) :
     m_nodeCount(nodes), m_ourNodeId(ourNodeId), m_tcp(tcp), m_marshaller(marshaller)
 {
-
+    if (nodes == 1) {
+        m_started = true;
+        m_startedCluster = true;
+        SystemToken *token = new SystemToken(m_nodeCount, m_ourNodeId == 0);
+        m_tokenPrivate.emplace(std::piecewise_construct, std::forward_as_tuple("___system_token"), std::forward_as_tuple(token));
+    }
 }
 
 bool ClusterLoop::handle(Event *event)
@@ -115,6 +122,17 @@ void ClusterLoop::handleNew(EventNewMonitor *event)
     if (privateIt != m_tokenPrivate.end()) {
         // TokenPrivateData *priv = privateIt->second.get();
         // cool
+        return;
+    }
+
+    if (!m_started) {
+        TokenPrivateData *newPriv = new TokenPrivateData(m_nodeCount, m_ourNodeId == 0, m_ourNodeId == 0);
+        m_tokenPrivate.emplace(std::piecewise_construct, std::forward_as_tuple(event->token()->id()), std::forward_as_tuple(newPriv));
+
+        if (m_ourNodeId != 0) {
+            requestToken("___system_token");
+        }
+
         return;
     }
 
