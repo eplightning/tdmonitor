@@ -5,6 +5,12 @@
 
 TDM_NAMESPACE
 
+Monitor::Monitor(Cluster &cluster, const String &id) :
+    m_id(id), m_cluster(cluster)
+{
+
+}
+
 void Monitor::property(const String &id, u8 &data)
 {
     m_properties.emplace(std::piecewise_construct,
@@ -152,6 +158,78 @@ void Monitor::property(const String &id, const String &type, SharedPtr<void> &da
                          std::forward_as_tuple(type, &data));
 }
 
+MonitorConditionVariable Monitor::condition(const String &id)
+{
+    m_conditions.emplace(std::piecewise_construct, std::forward_as_tuple(id), std::forward_as_tuple());
+
+    MonitorConditionVariable var(id, *this);
+
+    return var;
+}
+
+void Monitor::create()
+{
+    LoadPropertiesDelegate load = [this](const PropertyMap &map) {
+        loadProperties(map);
+    };
+
+    SavePropertiesDelegate save = [this](PropertyMap &map) {
+        saveProperties(map);
+    };
+
+    HashMap<String, SignalDelegate> signals;
+
+    for (auto &x : m_conditions) {
+        signals[x.first] = [&x]() {
+            x.second.notify_all();
+        };
+    }
+
+    SharedPtr<Token> token = std::make_shared<Token>(m_id, signals, load, save);
+
+    m_cluster.sendCreateRequest(token);
+}
+
+void Monitor::lock()
+{
+    m_mutex.lock();
+    m_cluster.sendLockRequest(m_id);
+    m_token->takeGrant();
+}
+
+void Monitor::unlock()
+{
+    m_cluster.sendUnlockRequest(m_id);
+    m_mutex.unlock();
+}
+
+void Monitor::signal(const String &condVar)
+{
+    auto entry = m_conditions.find(condVar);
+
+    if (entry == m_conditions.end()) {
+        return;
+    }
+
+    entry->second.notify_all();
+    m_cluster.sendSignalRequest(m_id, condVar);
+}
+
+void Monitor::wait(const String &condVar)
+{
+    auto entry = m_conditions.find(condVar);
+
+    if (entry == m_conditions.end()) {
+        return;
+    }
+
+    m_cluster.sendUnlockRequest(m_id);
+
+    UniqueLock lock(m_mutex, std::adopt_lock); // assume mutex is locked
+    entry->second.wait(lock);
+    lock.release(); // don't unlock mutex after scope ends
+}
+
 void Monitor::loadProperties(const PropertyMap &properties)
 {
     for (auto &x: m_properties) {
@@ -270,6 +348,22 @@ PropertyBinding::PropertyBinding(const String &type2, void *ptr2) :
     type(type2), ptr(ptr2)
 {
 
+}
+
+MonitorConditionVariable::MonitorConditionVariable(const String &id, Monitor &monitor) :
+    m_id(id), m_monitor(monitor)
+{
+
+}
+
+void MonitorConditionVariable::signal()
+{
+    m_monitor.signal(m_id);
+}
+
+void MonitorConditionVariable::wait()
+{
+    m_monitor.wait(m_id);
 }
 
 END_NAMESPACE

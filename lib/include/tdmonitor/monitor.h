@@ -2,6 +2,8 @@
 
 #include <tdmonitor/types.h>
 #include <tdmonitor/marshaller.h>
+#include <tdmonitor/cluster.h>
+#include <tdmonitor/token.h>
 
 #include <condition_variable>
 
@@ -14,23 +16,26 @@ struct PropertyBinding {
     PropertyBinding(const String &type, void *ptr);
 };
 
+class Monitor;
+
 class MonitorConditionVariable {
 public:
-    MonitorConditionVariable(const String &id);
+    MonitorConditionVariable(const String &id, Monitor &monitor);
 
     void signal();
     void wait();
 
 private:
-    std::condition_variable m_condVar;
-    // klastr
+    String m_id;
+    Monitor &m_monitor;
 };
 
 class Monitor {
 public:
-    friend class MonitorConditionVariable;
     // friend Cluster
+    Monitor(Cluster &cluster, const String &id);
 
+    // setup methods
     void property(const String &id, u8 &data);
     void property(const String &id, s8 &data);
     void property(const String &id, u16 &data);
@@ -52,18 +57,24 @@ public:
     void property(const String &id, Vector<float> &data);
     void property(const String &id, Vector<double> &data);
     void property(const String &id, const String &type, SharedPtr<void> &data);
+    MonitorConditionVariable condition(const String &id);
+    void create();
 
     void lock();
     void unlock();
-    MonitorConditionVariable &condition(const String &id);
+    void signal(const String &condVar);
+    void wait(const String &condVar);
 
 private:
     void loadProperties(const PropertyMap &properties);
     void saveProperties(PropertyMap &properties) const;
 
+    String m_id;
     Mutex m_mutex;
+    HashMap<String, std::condition_variable> m_conditions;
     HashMap<String, PropertyBinding> m_properties;
-    // klastr
+    Cluster &m_cluster;
+    SharedPtr<Token> m_token;
 };
 
 END_NAMESPACE
