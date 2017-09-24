@@ -73,7 +73,8 @@ private:
 
 class Token {
 public:
-    // friend ClusterLoop
+    friend class ClusterLoop;
+
     Token(const String &id, const HashMap<String, SignalDelegate> &condVars, LoadPropertiesDelegate load, SavePropertiesDelegate save);
 
     const String &id() const;

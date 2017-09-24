@@ -95,7 +95,7 @@ void Cluster::initTcp(const String &listen)
 
 void Cluster::initLoop()
 {
-    m_clusterLoop.reset(new ClusterLoop(m_nodeAddresses.size(), m_ourNodeId, m_tcp.get()));
+    m_clusterLoop.reset(new ClusterLoop(m_nodeAddresses.size(), m_ourNodeId, m_tcp.get(), m_marshaller.get()));
 
     m_eventLoop.reset(new EventLoop(1, m_evq.get(), [this](Event *ev) {
         return m_clusterLoop->handle(ev);
