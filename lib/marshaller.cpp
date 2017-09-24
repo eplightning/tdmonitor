@@ -60,7 +60,35 @@ PropertyValue::~PropertyValue()
 
 DataMarshaller::DataMarshaller()
 {
+    registerType("Vector<String>", [] (const PropertyValue& value) {
+        MarshallHelper helper;
 
+        void *rawPtr = value.ptr.get();
+        Vector<String> *vectorPtr = reinterpret_cast<Vector<String>*>(rawPtr);
+        helper.write(static_cast<u32>(vectorPtr->size()));
+
+        for (auto &x : *vectorPtr)
+            helper.write(x);
+
+        return helper.vector();
+    }, [] (const Vector<char>& bytes) {
+        UnmarshallHelper helper(bytes);
+
+        u32 size;
+        helper.read(size);
+
+        SharedPtr<Vector<String>> vectorPtr(new Vector<String>);
+        vectorPtr->reserve(size);
+
+        while (size > 0) {
+            String data;
+            helper.read(data);
+            vectorPtr->push_back(data);
+            --size;
+        }
+
+        return PropertyValue(vectorPtr);
+    });
 }
 
 void DataMarshaller::registerType(const String &type, MarshallDelegate marshall, UnmarshallDelegate unmarshall)

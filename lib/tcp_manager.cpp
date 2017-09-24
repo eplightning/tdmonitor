@@ -34,7 +34,7 @@ struct TcpManagerConnectInfo {
     sockaddr_storage saddr;
     TcpPool *pool;
     int attempts;
-    void *userData;
+    u64 userData;
 };
 
 /**
@@ -49,7 +49,7 @@ struct TcpManagerMessage {
     } options;
 };
 
-Client::Client(u32 id, int fd, const sockaddr *addr, TcpPool *pool, void *userData = nullptr) :
+Client::Client(u32 id, int fd, const sockaddr *addr, TcpPool *pool, u64 userData = 0) :
     m_id(id), m_socket(fd), m_pool(pool), m_state(TCSConnected), m_writeError(0), m_readError(0),
     m_connectError(0), m_dead(false), m_userData(userData), m_sendBuffer(nullptr),
     m_sendBufferQueue(), m_sendBufferMutex(), m_receiveBuffer()
@@ -226,7 +226,7 @@ TcpManager::~TcpManager()
     close(m_pipe[1]);
 }
 
-bool TcpManager::connect(ConnectionProtocol proto, const String &ip, u16 port, const String &pool, void *userData = nullptr)
+bool TcpManager::connect(ConnectionProtocol proto, const String &ip, u16 port, const String &pool, u64 userData = 0)
 {
     auto it = m_pools.find(pool);
     if (it == m_pools.end())
@@ -253,7 +253,7 @@ bool TcpManager::connect(ConnectionProtocol proto, const String &ip, u16 port, c
     return true;
 }
 
-bool TcpManager::connect(const String &address, const String &pool, void *userData = nullptr)
+bool TcpManager::connect(const String &address, const String &pool, u64 userData = 0)
 {
     u16 port;
     String ip;

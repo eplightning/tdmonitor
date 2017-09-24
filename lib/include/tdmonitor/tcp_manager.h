@@ -25,7 +25,7 @@ class Client {
 public:
     friend class TcpManager;
 
-    Client(u32 id, int fd, const sockaddr *addr, TcpPool *pool, void *userData);
+    Client(u32 id, int fd, const sockaddr *addr, TcpPool *pool, u64 userData);
     ~Client();
 
     u32 id() const { return m_id; }
@@ -36,8 +36,8 @@ public:
     const String &address() const { return m_address; }
     bool operator==(sockaddr_storage &saddr) const;
     void attachSendBuffer(TcpSendBuffer *buffer);
-    void *userData() const { return m_userData; }
-    void setUserData(void *userData) { m_userData = userData; }
+    u64 userData() const { return m_userData; }
+    void setUserData(u64 userData) { m_userData = userData; }
 
 protected:
     TcpReceiveBuffer &receiveBuffer() { return m_receiveBuffer; }
@@ -65,7 +65,7 @@ protected:
     int m_readError;
     int m_connectError;
     bool m_dead;
-    void *m_userData;
+    u64 m_userData;
 
     TcpSendBuffer *m_sendBuffer;
     std::queue<TcpSendBuffer*> m_sendBufferQueue;
@@ -136,8 +136,8 @@ public:
     explicit TcpManager(int rounds = 4);
     ~TcpManager();
 
-    bool connect(ConnectionProtocol proto, const String &ip, u16 port, const String &pool, void *userData);
-    bool connect(const String &address, const String &pool, void *userData);
+    bool connect(ConnectionProtocol proto, const String &ip, u16 port, const String &pool, u64 userData);
+    bool connect(const String &address, const String &pool, u64 userData);
     // note: poole powinny być utworzone zanim odpalimy runLoop
     void createPool(const String &name, TcpPool *pool);
     void disconnect(SharedPtr<Client> &client, bool force = false);

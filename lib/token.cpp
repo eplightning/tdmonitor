@@ -221,4 +221,65 @@ void Token::grant()
     m_grantedCondition.notify_one();
 }
 
+SystemToken::SystemToken(int nodes, bool owned) :
+    TokenPrivateData(nodes, true, owned)
+{
+
+}
+
+SystemToken::~SystemToken()
+{
+
+}
+
+void SystemToken::loadProperties(const PropertyMap &properties)
+{
+    TokenPrivateData::loadProperties(properties);
+
+    auto vectorIt = properties.find("monitors");
+
+    if (vectorIt == properties.cend()) {
+        // wyjątek
+        return;
+    }
+
+    const Property &vectorProp = vectorIt->second;
+
+    const SharedPtr<Vector<String>> &vectorPtr = *(reinterpret_cast<const SharedPtr<Vector<String>>*>(&vectorProp.value.ptr));
+    Vector<String> *vector = vectorPtr.get();
+
+    m_monitors.clear();
+
+    for (auto &x : *vector)
+        m_monitors.insert(x);
+}
+
+void SystemToken::saveProperties(PropertyMap &properties) const
+{
+    TokenPrivateData::saveProperties(properties);
+
+    SharedPtr<Vector<String>> vectorPtr(new Vector<String>(m_monitors.size()));
+    Vector<String> &vector = *vectorPtr;
+
+    for (auto &x : m_monitors) {
+        vector.push_back(x);
+    }
+
+    PropertyValue vectorValue(vectorPtr);
+
+    properties.emplace(std::piecewise_construct,
+                       std::forward_as_tuple("monitors"),
+                       std::forward_as_tuple("monitors", "Vector<String>", vectorValue));
+}
+
+void SystemToken::addMonitor(const String &monitor)
+{
+    m_monitors.insert(monitor);
+}
+
+bool SystemToken::hasMonitor(const String &monitor)
+{
+    return m_monitors.count(monitor) > 0;
+}
+
 END_NAMESPACE

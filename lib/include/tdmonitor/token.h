@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <functional>
 #include <queue>
+#include <set>
 
 TDM_NAMESPACE
 
@@ -17,7 +18,7 @@ typedef std::function<void(PropertyMap &)> SavePropertiesDelegate;
 class TokenPrivateData {
 public:
     TokenPrivateData(int nodes, bool created, bool owned);
-    ~TokenPrivateData();
+    virtual ~TokenPrivateData();
 
     u32 incrementRequestNumber(u32 node);
     void updateRequestNumber(u32 node, u32 request);
@@ -35,8 +36,8 @@ public:
     void setOwned(bool owned);
     void setLocked(bool locked);
 
-    void loadProperties(const PropertyMap &properties);
-    void saveProperties(PropertyMap &properties) const;
+    virtual void loadProperties(const PropertyMap &properties);
+    virtual void saveProperties(PropertyMap &properties) const;
 
 private:
     // LN(n), RN(n), Q algorytmu
@@ -53,6 +54,21 @@ private:
 
     // czy jesteśmy w sekcji
     bool m_locked;
+};
+
+class SystemToken : public TokenPrivateData {
+public:
+    SystemToken(int nodes, bool owned);
+    ~SystemToken();
+
+    void loadProperties(const PropertyMap &properties);
+    void saveProperties(PropertyMap &properties) const;
+
+    void addMonitor(const String &monitor);
+    bool hasMonitor(const String &monitor);
+
+private:
+    std::set<String> m_monitors;
 };
 
 class Token {
