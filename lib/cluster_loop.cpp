@@ -41,6 +41,8 @@ bool ClusterLoop::handle(Event *event)
         break;
     }
 
+    delete event;
+
     return true;
 }
 

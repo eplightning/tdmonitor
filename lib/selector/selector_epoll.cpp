@@ -28,9 +28,9 @@ SelectorApiEpoll::~SelectorApiEpoll()
         delete kv.second;
 
     for (auto timer : m_timers)
-        close(timer);
+        ::close(timer);
 
-    close(m_epollfd);
+    ::close(m_epollfd);
 }
 
 void SelectorApiEpoll::add(int fd, int type, void *data, int eventType)
