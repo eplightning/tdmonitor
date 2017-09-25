@@ -4,21 +4,27 @@ Rozproszony monitor oparty na algorytmie Suzukiego-Kasami
 
 ## Kompilacja
 Wykorzystywany jest system budowania Qt czyli qmake
+
 `
 qmake tdmonitor.pro
 `
+
 `
 make qmake_all
 `
+
 `
 make
 `
 
 ## Uruchamianie przykładu
 Dostarczony jest przykład użycia biblioteki w postaci programu konsumenta i producenta.
+
+
 `
 prodconsumer [adres_nasłuchiwania] [indeks_węzła] [adres_węzła1] [adres_węzła2] ...
 `
+
 `
 prodconsumer 0.0.0.0:31410 0 127.0.0.1:31410 127.0.0.1:31411 127.0.0.1:31412
 `
