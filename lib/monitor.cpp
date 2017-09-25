@@ -158,13 +158,13 @@ void Monitor::property(const String &id, const String &type, SharedPtr<void> &da
                          std::forward_as_tuple(type, &data));
 }
 
-MonitorConditionVariable Monitor::condition(const String &id)
+UniquePtr<MonitorConditionVariable> Monitor::condition(const String &id)
 {
     m_conditions.emplace(std::piecewise_construct, std::forward_as_tuple(id), std::forward_as_tuple());
 
-    MonitorConditionVariable var(id, *this);
+    MonitorConditionVariable *var = new MonitorConditionVariable(id, *this);
 
-    return var;
+    return UniquePtr<MonitorConditionVariable>(var);
 }
 
 void Monitor::create()
@@ -229,6 +229,8 @@ void Monitor::wait(const String &condVar)
     UniqueLock lock(m_mutex, std::adopt_lock); // assume mutex is locked
     entry->second.wait(lock);
     lock.release(); // don't unlock mutex after scope ends
+    m_cluster.sendLockRequest(m_id);
+    m_token->takeGrant();
 }
 
 void Monitor::loadProperties(const PropertyMap &properties)
@@ -257,27 +259,27 @@ void Monitor::loadProperties(const PropertyMap &properties)
                 *(reinterpret_cast<double*>(x.second.ptr)) = prop.value.doubleFloat;
             }
         } else if (prop.type.at(0) == '#') {
-            if (prop.type == "$u8" || prop.type == "$s8") {
+            if (prop.type == "#u8" || prop.type == "#s8") {
                 Vector<u8> *vector = reinterpret_cast<Vector<u8>*>(x.second.ptr);
                 Vector<u8> *vectorRead = reinterpret_cast<Vector<u8>*>(prop.value.ptr.get());
                 *vector = *vectorRead;
-            } else if (prop.type == "$u16" || prop.type == "$s16") {
+            } else if (prop.type == "#u16" || prop.type == "#s16") {
                 Vector<u16> *vector = reinterpret_cast<Vector<u16>*>(x.second.ptr);
                 Vector<u16> *vectorRead = reinterpret_cast<Vector<u16>*>(prop.value.ptr.get());
                 *vector = *vectorRead;
-            } else if (prop.type == "$u32" || prop.type == "$s32") {
+            } else if (prop.type == "#u32" || prop.type == "#s32") {
                 Vector<u32> *vector = reinterpret_cast<Vector<u32>*>(x.second.ptr);
                 Vector<u32> *vectorRead = reinterpret_cast<Vector<u32>*>(prop.value.ptr.get());
                 *vector = *vectorRead;
-            } else if (prop.type == "$s64" || prop.type == "$u64") {
+            } else if (prop.type == "#s64" || prop.type == "#u64") {
                 Vector<u64> *vector = reinterpret_cast<Vector<u64>*>(x.second.ptr);
                 Vector<u64> *vectorRead = reinterpret_cast<Vector<u64>*>(prop.value.ptr.get());
                 *vector = *vectorRead;
-            } else if (prop.type == "$float") {
+            } else if (prop.type == "#float") {
                 Vector<float> *vector = reinterpret_cast<Vector<float>*>(x.second.ptr);
                 Vector<float> *vectorRead = reinterpret_cast<Vector<float>*>(prop.value.ptr.get());
                 *vector = *vectorRead;
-            } else if (prop.type == "$double") {
+            } else if (prop.type == "#double") {
                 Vector<double> *vector = reinterpret_cast<Vector<double>*>(x.second.ptr);
                 Vector<double> *vectorRead = reinterpret_cast<Vector<double>*>(prop.value.ptr.get());
                 *vector = *vectorRead;

@@ -116,8 +116,13 @@ bool SelectorApiEpoll::wait(Vector<SelectorEvent> &events)
 
     struct epoll_event returnedEvents[m_bufsize];
     int nevents = epoll_wait(m_epollfd, returnedEvents, m_bufsize, -1);
-    if (nevents == -1)
+    if (nevents == -1) {
+        if (errno == EINTR) {
+            return wait(events);
+        }
+
         return false;
+    }
 
     for (int i = 0; i < nevents; i++)
     {

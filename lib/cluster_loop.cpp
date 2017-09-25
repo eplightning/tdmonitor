@@ -85,6 +85,14 @@ void ClusterLoop::handleConnect(EventConnected *event)
 
         SystemToken *token = new SystemToken(m_nodeCount, m_ourNodeId == 0);
         m_tokenPrivate.emplace(std::piecewise_construct, std::forward_as_tuple("___system_token"), std::forward_as_tuple(token));
+
+        if (m_ourNodeId == 0) {
+            for (auto &x : m_tokenPrivate) {
+                if (x.first != "___system_token") {
+                    token->addMonitor(x.first);
+                }
+            }
+        }
     }
 }
 
@@ -167,6 +175,20 @@ void ClusterLoop::packetClusterHandshake(CorePackets::ClusterHandshake *packet, 
     if (m_clusterHandshakes >= m_nodeCount - 1 && !m_startedCluster) {
         m_startedCluster = true;
 
+        for (auto &x : m_pendingGrants) {
+            auto privateIt = m_tokenPrivate.find(x);
+
+            if (privateIt == m_tokenPrivate.end()) {
+                continue;
+            }
+
+            TokenPrivateData *priv = privateIt->second.get();
+
+            if (priv->owned()) {
+                grant(x, priv);
+            }
+        }
+
         for (auto &x : m_pendingRequests) {
             CorePackets::RequestToken *request = new CorePackets::RequestToken;
             request->setTokenId(x);
@@ -198,6 +220,8 @@ void ClusterLoop::packetGiveToken(CorePackets::GiveToken *packet, u32 nodeId)
         return;
     }
 
+    m_pendingRequests.erase(packet->tokenId());
+
     priv->setOwned(true);
 
     PropertyMap map = m_marshaller->unmarshallMap(packet->data());
@@ -220,9 +244,16 @@ void ClusterLoop::packetGiveToken(CorePackets::GiveToken *packet, u32 nodeId)
                     }
                 } else {
                     token2->setOwned(true);
+                    sysToken->addMonitor(x.first);
                     grant(x.first, token2);
                 }
             }
+        }
+
+        if (sysToken->release(m_ourNodeId)) {
+            u32 target = sysToken->queue().front();
+            sysToken->queue().pop();
+            sendToken("___system_token", target, sysToken);
         }
 
         return;
@@ -304,8 +335,12 @@ void ClusterLoop::requestLock(const String &monitor)
 
     m_pendingGrants.insert(monitor);
 
-    if (priv->owned()) {
-        grant(monitor, priv, pub);
+    if (m_startedCluster) {
+        if (priv->owned()) {
+            grant(monitor, priv, pub);
+        } else {
+            requestToken(monitor);
+        }
     }
 }
 

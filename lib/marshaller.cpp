@@ -319,7 +319,7 @@ Vector<char> DataMarshaller::marshallMap(const PropertyMap &map)
 {
     MarshallHelper helper;
 
-    helper.write(map.size());
+    helper.write(static_cast<u32>(map.size()));
 
     for (auto &x : map) {
         helper.write(x.second.id);

@@ -57,7 +57,7 @@ public:
     void property(const String &id, Vector<float> &data);
     void property(const String &id, Vector<double> &data);
     void property(const String &id, const String &type, SharedPtr<void> &data);
-    MonitorConditionVariable condition(const String &id);
+    UniquePtr<MonitorConditionVariable> condition(const String &id);
     void create();
 
     void lock();

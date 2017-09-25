@@ -108,6 +108,11 @@ bool Cluster::tcpNew(SharedPtr<Client> &client)
 {
     m_clients[client->id()] = client;
 
+    CorePackets::EdgeHandshake *handshake = new CorePackets::EdgeHandshake;
+    handshake->setId(m_ourNodeId);
+    m_tcp->sendTo(client, handshake);
+    delete handshake;
+
     return true;
 }
 
@@ -117,6 +122,11 @@ void Cluster::tcpState(Client *client, TcpClientState state, int error)
 
     if (state == TCSConnected) {
         m_clients[client->id()] = m_tcp->client(client->id());
+
+        CorePackets::EdgeHandshake *handshake = new CorePackets::EdgeHandshake;
+        handshake->setId(m_ourNodeId);
+        m_tcp->sendTo(m_clients[client->id()], handshake);
+        delete handshake;
     } else if (state == TCSDisconnected) {
         auto nodeIt = m_clientNodeMapping.find(client->id());
 

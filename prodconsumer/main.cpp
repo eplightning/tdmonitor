@@ -3,20 +3,122 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+#include <iostream>
+
+class ConsumerProducer {
+public:
+    ConsumerProducer(TDM::Cluster &cluster, const std::string &name, int toProduce) :
+        m_toProduce(toProduce), m_monitor(cluster, name)
+    {
+        m_monitor.property("messages", m_messages);
+        m_condFree = m_monitor.condition("free");
+        m_condData = m_monitor.condition("data");
+        m_monitor.create();
+    }
+
+    ~ConsumerProducer()
+    {
+        m_stop = true;
+
+        if (m_consumerThread.joinable())
+            m_consumerThread.join();
+
+        if (m_producerThread.joinable())
+            m_producerThread.join();
+    }
+
+    void consume()
+    {
+        m_monitor.lock();
+
+        while (m_messages.size() == 0) {
+            m_condData->wait();
+        }
+
+        std::cout << "Skonsumowano: " << m_messages.back() << std::endl;
+        m_messages.pop_back();
+
+        m_condFree->signal();
+
+        m_monitor.unlock();
+    }
+
+    void produce()
+    {
+        m_monitor.lock();
+
+        while (m_messages.size() == 10) {
+            m_condFree->wait();
+        }
+
+        std::cout << "Wyprodukowano: " << m_toProduce << std::endl;
+        m_messages.push_back(m_toProduce);
+
+        m_condData->signal();
+
+        m_monitor.unlock();
+    }
+
+    void startThreads()
+    {
+        m_producerThread = std::thread([this]() {
+            while (!m_stop) {
+                produce();
+            }
+        });
+
+        m_consumerThread = std::thread([this]() {
+            while (!m_stop) {
+                consume();
+            }
+        });
+    }
+
+private:
+    volatile bool m_stop;
+    std::thread m_producerThread;
+    std::thread m_consumerThread;
+    int m_toProduce;
+    std::vector<int> m_messages;
+    TDM::Monitor m_monitor;
+    std::unique_ptr<TDM::MonitorConditionVariable> m_condFree;
+    std::unique_ptr<TDM::MonitorConditionVariable> m_condData;
+};
 
 int main(int argc, char *argv[])
 {
     std::vector<std::string> nodes;
-    nodes.push_back("127.0.0.1:31410");
 
-    TDM::Cluster cluster(nodes, 0, "0.0.0.0:31410");
+    std::string listenAddress;
+    uint32_t nodeId;
 
-    TDM::Monitor monitor(cluster, "producent");
+    if (argc < 4) {
+        std::cout << "program adres_nasłuchujący node_id node0 nodeAddr1 nodeAddr2 nodeAddr3 nodeAddr4" << std::endl;
+        return 0;
+    }
 
-    monitor.create();
+    listenAddress = argv[1];
+    nodeId = std::stoul(argv[2]);
 
-    monitor.lock();
-    monitor.unlock();
+    for (int i = 3; i < argc; ++i) {
+        nodes.push_back(argv[i]);
+    }
+
+    if (nodeId > nodes.size() - 1) {
+        std::cout << "nodeId za duży";
+        return 0;
+    }
+
+    TDM::Cluster cluster(nodes, nodeId, listenAddress);
+
+    ConsumerProducer worker(cluster, "consumer-producer", nodeId);
+
+    worker.startThreads();
+
+    while (1) {
+        // ...
+    }
 
     return 0;
 }

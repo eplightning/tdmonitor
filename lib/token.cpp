@@ -258,7 +258,7 @@ void SystemToken::saveProperties(PropertyMap &properties) const
 {
     TokenPrivateData::saveProperties(properties);
 
-    SharedPtr<Vector<String>> vectorPtr(new Vector<String>(m_monitors.size()));
+    SharedPtr<Vector<String>> vectorPtr(new Vector<String>());
     Vector<String> &vector = *vectorPtr;
 
     for (auto &x : m_monitors) {
