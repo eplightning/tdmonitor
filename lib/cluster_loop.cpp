@@ -76,6 +76,7 @@ void ClusterLoop::handleConnect(EventConnected *event)
     m_nodes[event->nodeId()] = event->client();
 
     if (static_cast<int>(m_nodes.size()) >= m_nodeCount - 1 && !m_started) {
+        TDM_LOG("All nodes connected, advancing to cluster handshake");
         m_started = true;
 
         CorePackets::ClusterHandshake *handshake = new CorePackets::ClusterHandshake;
@@ -99,6 +100,8 @@ void ClusterLoop::handleConnect(EventConnected *event)
 void ClusterLoop::handleDisconnect(EventDisconnected *event)
 {
     UNUSED(event);
+
+    TDM_LOG("Disconnected node ", event->nodeId());
 }
 
 void ClusterLoop::handleRequest(EventRequest *event)
@@ -118,6 +121,8 @@ void ClusterLoop::handleRequest(EventRequest *event)
 
 void ClusterLoop::handleNew(EventNewMonitor *event)
 {
+    TDM_LOG("Creating new monitor: ", event->token()->id());
+
     auto publicIt = m_tokens.find(event->token()->id());
 
     if (publicIt != m_tokens.end()) {
@@ -136,6 +141,8 @@ void ClusterLoop::handleNew(EventNewMonitor *event)
     }
 
     if (!m_started) {
+        TDM_LOG("EdgeHandshake not finished");
+
         TokenPrivateData *newPriv = new TokenPrivateData(m_nodeCount, m_ourNodeId == 0, m_ourNodeId == 0);
         m_tokenPrivate.emplace(std::piecewise_construct, std::forward_as_tuple(event->token()->id()), std::forward_as_tuple(newPriv));
 
@@ -149,16 +156,22 @@ void ClusterLoop::handleNew(EventNewMonitor *event)
     SystemToken *system = systemToken();
 
     if (system->hasMonitor(event->token()->id())) {
+        TDM_LOG("Monitor already exists in the cluster");
+
         TokenPrivateData *newPriv = new TokenPrivateData(m_nodeCount, true, false);
 
         m_tokenPrivate.emplace(std::piecewise_construct, std::forward_as_tuple(event->token()->id()), std::forward_as_tuple(newPriv));
     } else if (system->owned()) {
+        TDM_LOG("Monitor doesn't exist but we have systemToken");
+
         system->addMonitor(event->token()->id());
 
         TokenPrivateData *newPriv = new TokenPrivateData(m_nodeCount, true, true);
 
         m_tokenPrivate.emplace(std::piecewise_construct, std::forward_as_tuple(event->token()->id()), std::forward_as_tuple(newPriv));
     } else {
+        TDM_LOG("Monitor doesn't exist and we have no systemToken");
+
         TokenPrivateData *newPriv = new TokenPrivateData(m_nodeCount, false, false);
 
         m_tokenPrivate.emplace(std::piecewise_construct, std::forward_as_tuple(event->token()->id()), std::forward_as_tuple(newPriv));
@@ -172,7 +185,11 @@ void ClusterLoop::packetClusterHandshake(CorePackets::ClusterHandshake *packet, 
     UNUSED(packet);
     m_clusterHandshakes++;
 
+    TDM_LOG("Received cluster handshake from node: ", nodeId);
+
     if (m_clusterHandshakes >= m_nodeCount - 1 && !m_startedCluster) {
+        TDM_LOG("ClusterHandshake finished, sending token requests and granting access if possible");
+
         m_startedCluster = true;
 
         for (auto &x : m_pendingGrants) {
@@ -202,6 +219,8 @@ void ClusterLoop::packetClusterHandshake(CorePackets::ClusterHandshake *packet, 
 void ClusterLoop::packetGiveToken(CorePackets::GiveToken *packet, u32 nodeId)
 {
     UNUSED(nodeId);
+
+    TDM_LOG("Received token ", packet->tokenId(), " from ", nodeId);
 
     if (!m_started)
         return;
@@ -250,6 +269,8 @@ void ClusterLoop::packetGiveToken(CorePackets::GiveToken *packet, u32 nodeId)
             }
         }
 
+        TDM_LOG("systemToken processed, releasing");
+
         if (sysToken->release(m_ourNodeId)) {
             u32 target = sysToken->queue().front();
             sysToken->queue().pop();
@@ -277,6 +298,8 @@ void ClusterLoop::packetRequestToken(CorePackets::RequestToken *packet, u32 node
     if (!m_started)
         return;
 
+    TDM_LOG("Received token request for ", packet->tokenId(), " from ", nodeId);
+
     auto privateIt = m_tokenPrivate.find(packet->tokenId());
     TokenPrivateData *priv = nullptr;
 
@@ -299,6 +322,8 @@ void ClusterLoop::packetSignal(CorePackets::Signal *packet, u32 nodeId)
 {
     UNUSED(nodeId);
 
+    TDM_LOG("Received signal for ", packet->tokenId());
+
     if (!m_started)
         return;
 
@@ -315,6 +340,8 @@ void ClusterLoop::packetSignal(CorePackets::Signal *packet, u32 nodeId)
 
 void ClusterLoop::requestLock(const String &monitor)
 {
+    TDM_LOG("Lock requested for ", monitor);
+
     auto privateIt = m_tokenPrivate.find(monitor);
     auto publicIt = m_tokens.find(monitor);
 
@@ -346,6 +373,8 @@ void ClusterLoop::requestLock(const String &monitor)
 
 void ClusterLoop::requestUnlock(const String &monitor)
 {
+    TDM_LOG("Unlock requested for ", monitor);
+
     auto privateIt = m_tokenPrivate.find(monitor);
 
     if (privateIt == m_tokenPrivate.end()) {
@@ -369,6 +398,8 @@ void ClusterLoop::requestUnlock(const String &monitor)
 
 void ClusterLoop::requestSignal(const String &monitor, const String &condVar)
 {
+    TDM_LOG("Signal requested for ", monitor, ": ", condVar);
+
     CorePackets::Signal *signal = new CorePackets::Signal;
     signal->setTokenId(monitor);
     signal->setVariableId(condVar);
@@ -394,7 +425,11 @@ SystemToken *ClusterLoop::systemToken()
 
 void ClusterLoop::requestToken(const String &id)
 {
+    TDM_LOG("Requesting token ", id);
+
     if (m_pendingRequests.count(id) == 0) {
+        TDM_LOG("No pending requests, sending ...");
+
         m_pendingRequests.insert(id);
 
         if (m_startedCluster) {
@@ -432,7 +467,10 @@ void ClusterLoop::grant(const String &id, TokenPrivateData *priv)
 
 void ClusterLoop::grant(const String &id, TokenPrivateData *priv, SharedPtr<Token> &pub)
 {
+    TDM_LOG("Trying to grant ", id);
+
     if (m_pendingGrants.count(id) > 0) {
+        TDM_LOG("Granted");
         priv->setLocked(true);
         m_pendingGrants.erase(id);
         pub->grant();
@@ -453,6 +491,8 @@ void ClusterLoop::grant(const String &id, SharedPtr<Token> &pub)
 
 void ClusterLoop::sendToken(const String &id, u32 node, TokenPrivateData *priv)
 {
+    TDM_LOG("Sending token ", id, " to ", node);
+
     PropertyMap map;
 
     priv->saveProperties(map);

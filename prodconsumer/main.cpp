@@ -1,3 +1,4 @@
+#include <tdmonitor/types.h>
 #include <tdmonitor/cluster.h>
 #include <tdmonitor/monitor.h>
 
@@ -30,9 +31,12 @@ public:
 
     void consume()
     {
+        std::cout << "Konsument przed lockiem" << std::endl;
+
         m_monitor.lock();
 
         while (m_messages.size() == 0) {
+            std::cout << "Konsument czeka" << std::endl;
             m_condData->wait();
         }
 
@@ -42,13 +46,16 @@ public:
         m_condFree->signal();
 
         m_monitor.unlock();
+        std::cout << "Konsument po unlocku" << std::endl;
     }
 
     void produce()
     {
+        std::cout << "Producent przed lockiem" << std::endl;
         m_monitor.lock();
 
         while (m_messages.size() == 10) {
+            std::cout << "Producent czeka" << std::endl;
             m_condFree->wait();
         }
 
@@ -58,6 +65,7 @@ public:
         m_condData->signal();
 
         m_monitor.unlock();
+        std::cout << "Producent po unlocku" << std::endl;
     }
 
     void startThreads()

@@ -2,6 +2,7 @@
 
 #include <tdmonitor/types.h>
 #include <tdmonitor/packets/core.h>
+#include <tdmonitor/misc_utils.h>
 
 TDM_NAMESPACE
 
@@ -74,7 +75,11 @@ void Cluster::initTcp(const String &listen)
 
     if (sock >= 0) {
         pool->appendListenSocket(proto, sock);
+
+        TDM_LOG("Cluster listening on: ", listen);
     } else {
+        TDM_LOG("Could not create listen socket: ", MiscUtils::systemError(sock));
+
         // błąd
     }
 
@@ -83,12 +88,14 @@ void Cluster::initTcp(const String &listen)
     uint idx = 0;
 
     while (idx < m_ourNodeId) {
+        TDM_LOG("Connecting to node ", idx, " via ", m_nodeAddresses[idx]);
         m_tcp->connect(m_nodeAddresses[idx], "cluster", idx);
         ++idx;
     }
 
     m_tcpThread = std::thread([this] {
         m_tcp->runLoop(5);
+        TDM_LOG("TCP thread exited");
         // błąd
     });
 }
@@ -106,12 +113,16 @@ void Cluster::initLoop()
 
 bool Cluster::tcpNew(SharedPtr<Client> &client)
 {
+    TDM_LOG("Received new connection: ", client->id());
+
     m_clients[client->id()] = client;
 
     CorePackets::EdgeHandshake *handshake = new CorePackets::EdgeHandshake;
     handshake->setId(m_ourNodeId);
     m_tcp->sendTo(client, handshake);
     delete handshake;
+
+    TDM_LOG("Handshake sent");
 
     return true;
 }
@@ -121,12 +132,15 @@ void Cluster::tcpState(Client *client, TcpClientState state, int error)
     UNUSED(error);
 
     if (state == TCSConnected) {
+        TDM_LOG("Connection success: ", client->id());
+
         m_clients[client->id()] = m_tcp->client(client->id());
 
         CorePackets::EdgeHandshake *handshake = new CorePackets::EdgeHandshake;
         handshake->setId(m_ourNodeId);
         m_tcp->sendTo(m_clients[client->id()], handshake);
         delete handshake;
+        TDM_LOG("Handshake sent");
     } else if (state == TCSDisconnected) {
         auto nodeIt = m_clientNodeMapping.find(client->id());
 
@@ -135,6 +149,7 @@ void Cluster::tcpState(Client *client, TcpClientState state, int error)
             m_evq->append(dc);
         }
     } else if (state == TCSFailedToEstablish) {
+        TDM_LOG("Failed to establish ", client->id());
         // nie udało się połączyć
     }
 }
@@ -153,6 +168,7 @@ void Cluster::tcpReceive(Client *client, PacketHeader header, const Vector<char>
     Packet *packet;
 
     if ((packet = Packet::factory(header, data)) == nullptr) {
+        TDM_LOG("Invalid packet received");
         m_tcp->disconnect(clientPtr, true);
         return;
     }
@@ -169,6 +185,9 @@ void Cluster::tcpReceive(Client *client, PacketHeader header, const Vector<char>
 
         Event *newNode = new EventConnected(clientPtr, nodeId);
         m_evq->append(newNode);
+
+        TDM_LOG("EdgeHandshake received");
+
         return;
     }
 

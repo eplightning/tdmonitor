@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tdmonitor/logger.h>
+
 #include <string>
 #include <memory>
 #include <map>

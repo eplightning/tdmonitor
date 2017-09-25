@@ -36,7 +36,8 @@ HEADERS += \
     include/tdmonitor/token.h \
     include/tdmonitor/monitor.h \
     include/tdmonitor/cluster.h \
-    include/tdmonitor/cluster_loop.h
+    include/tdmonitor/cluster_loop.h \
+    include/tdmonitor/logger.h
 
 unix:!macx {
     SOURCES += \
