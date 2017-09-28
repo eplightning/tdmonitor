@@ -52,7 +52,7 @@ bool TokenPrivateData::release(u32 node)
 
     m_queue.swap(newQueue);
 
-    return !newQueue.empty();
+    return !m_queue.empty();
 }
 
 u32 TokenPrivateData::rn(u32 node) const
