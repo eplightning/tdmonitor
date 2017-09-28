@@ -64,7 +64,7 @@ DataMarshaller::DataMarshaller()
         MarshallHelper helper;
 
         void *rawPtr = value.ptr.get();
-        Vector<String> *vectorPtr = reinterpret_cast<Vector<String>*>(rawPtr);
+        Vector<String> *vectorPtr = static_cast<Vector<String>*>(rawPtr);
         helper.write(static_cast<u32>(vectorPtr->size()));
 
         for (auto &x : *vectorPtr)
@@ -176,7 +176,7 @@ PropertyValue DataMarshaller::unmarshallPrimitive(const String &type, const Vect
         helper.read(data);
         return PropertyValue(data);
     } else if (type == "$double") {
-        float data;
+        double data;
         helper.read(data);
         return PropertyValue(data);
     }
@@ -191,37 +191,37 @@ Vector<char> DataMarshaller::marshallPrimitiveVector(const String &type, const P
     void *rawPtr = value.ptr.get();
 
     if (type == "#u8" || type == "#s8") {
-        Vector<u8> *vectorPtr = reinterpret_cast<Vector<u8>*>(rawPtr);
+        Vector<u8> *vectorPtr = static_cast<Vector<u8>*>(rawPtr);
         helper.write(static_cast<u32>(vectorPtr->size()));
 
         for (auto x : *vectorPtr)
             helper.write(x);
     } else if (type == "#u16" || type == "#s16") {
-        Vector<u16> *vectorPtr = reinterpret_cast<Vector<u16>*>(rawPtr);
+        Vector<u16> *vectorPtr = static_cast<Vector<u16>*>(rawPtr);
         helper.write(static_cast<u32>(vectorPtr->size()));
 
         for (auto x : *vectorPtr)
             helper.write(x);
     } else if (type == "#u32" || type == "#s32") {
-        Vector<u32> *vectorPtr = reinterpret_cast<Vector<u32>*>(rawPtr);
+        Vector<u32> *vectorPtr = static_cast<Vector<u32>*>(rawPtr);
         helper.write(static_cast<u32>(vectorPtr->size()));
 
         for (auto x : *vectorPtr)
             helper.write(x);
     } else if (type == "#u64" || type == "#s64") {
-        Vector<u64> *vectorPtr = reinterpret_cast<Vector<u64>*>(rawPtr);
+        Vector<u64> *vectorPtr = static_cast<Vector<u64>*>(rawPtr);
         helper.write(static_cast<u32>(vectorPtr->size()));
 
         for (auto x : *vectorPtr)
             helper.write(x);
     } else if (type == "#float") {
-        Vector<float> *vectorPtr = reinterpret_cast<Vector<float>*>(rawPtr);
+        Vector<float> *vectorPtr = static_cast<Vector<float>*>(rawPtr);
         helper.write(static_cast<u32>(vectorPtr->size()));
 
         for (auto x : *vectorPtr)
             helper.write(x);
     } else if (type == "#double") {
-        Vector<double> *vectorPtr = reinterpret_cast<Vector<double>*>(rawPtr);
+        Vector<double> *vectorPtr = static_cast<Vector<double>*>(rawPtr);
         helper.write(static_cast<u32>(vectorPtr->size()));
 
         for (auto x : *vectorPtr)

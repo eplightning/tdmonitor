@@ -29,9 +29,8 @@ void EventQueue::append(Event *event)
 {
     m_mutex.lock();
     m_events.push(event);
-    m_mutex.unlock();
-
     m_cond.notify_one();
+    m_mutex.unlock();
 }
 
 Event *EventQueue::pop()
@@ -54,9 +53,8 @@ void EventQueue::stop()
 {
     m_mutex.lock();
     m_stopped = true;
-    m_mutex.unlock();
-
     m_cond.notify_all();
+    m_mutex.unlock();
 }
 
 EventLoop::EventLoop(int workers, EventQueue *evq, EventLoopDelegate func)

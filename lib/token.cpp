@@ -50,7 +50,7 @@ bool TokenPrivateData::release(u32 node)
         }
     }
 
-    m_queue = newQueue;
+    m_queue.swap(newQueue);
 
     return !newQueue.empty();
 }
@@ -113,9 +113,9 @@ void TokenPrivateData::loadProperties(const PropertyMap &properties)
     const Property &queueProp = queueIt->second;
     const Property &lnProp = lnIt->second;
 
-    const SharedPtr<Vector<u32>> &queuePtr = *(reinterpret_cast<const SharedPtr<Vector<u32>>*>(&queueProp.value.ptr));
+    const SharedPtr<Vector<u32>> queuePtr = std::static_pointer_cast<Vector<u32>>(queueProp.value.ptr);
     Vector<u32> *queue = queuePtr.get();
-    const SharedPtr<Vector<u32>> &lnPtr = *(reinterpret_cast<const SharedPtr<Vector<u32>>*>(&lnProp.value.ptr));
+    const SharedPtr<Vector<u32>> lnPtr = std::static_pointer_cast<Vector<u32>>(lnProp.value.ptr);
     Vector<u32> *ln = lnPtr.get();
 
     if (ln->size() != static_cast<size_t>(m_nodes)) {
@@ -140,8 +140,8 @@ void TokenPrivateData::loadProperties(const PropertyMap &properties)
 
 void TokenPrivateData::saveProperties(PropertyMap &properties) const
 {
-    SharedPtr<Vector<u32>> lnPtr(new Vector<u32>(m_nodes));
-    SharedPtr<Vector<u32>> queuePtr(new Vector<u32>());
+    auto lnPtr = std::make_shared<Vector<u32>>(m_nodes);
+    auto queuePtr = std::make_shared<Vector<u32>>();
     Vector<u32> &ln = *lnPtr;
     Vector<u32> &queue = *queuePtr;
 
@@ -245,7 +245,7 @@ void SystemToken::loadProperties(const PropertyMap &properties)
 
     const Property &vectorProp = vectorIt->second;
 
-    const SharedPtr<Vector<String>> &vectorPtr = *(reinterpret_cast<const SharedPtr<Vector<String>>*>(&vectorProp.value.ptr));
+    const SharedPtr<Vector<String>> vectorPtr = std::static_pointer_cast<Vector<String>>(vectorProp.value.ptr);
     Vector<String> *vector = vectorPtr.get();
 
     m_monitors.clear();
@@ -258,7 +258,7 @@ void SystemToken::saveProperties(PropertyMap &properties) const
 {
     TokenPrivateData::saveProperties(properties);
 
-    SharedPtr<Vector<String>> vectorPtr(new Vector<String>());
+    auto vectorPtr = std::make_shared<Vector<String>>();
     Vector<String> &vector = *vectorPtr;
 
     for (auto &x : m_monitors) {

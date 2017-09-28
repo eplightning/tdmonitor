@@ -10,7 +10,7 @@
 class ConsumerProducer {
 public:
     ConsumerProducer(TDM::Cluster &cluster, const std::string &name, int toProduce) :
-        m_toProduce(toProduce), m_monitor(cluster, name)
+        m_stop(false), m_toProduce(toProduce), m_monitor(cluster, name)
     {
         m_monitor.property("messages", m_messages);
         m_condFree = m_monitor.condition("free");
@@ -121,8 +121,10 @@ int main(int argc, char *argv[])
     TDM::Cluster cluster(nodes, nodeId, listenAddress);
 
     ConsumerProducer worker(cluster, "consumer-producer", nodeId);
+    ConsumerProducer worker2(cluster, "drugi-monitor", listenAddress.size() + nodeId);
 
     worker.startThreads();
+    worker2.startThreads();
 
     while (1) {
         // ...

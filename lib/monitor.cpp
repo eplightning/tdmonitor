@@ -246,46 +246,46 @@ void Monitor::loadProperties(const PropertyMap &properties)
 
         if (prop.type.at(0) == '$') {
             if (prop.type == "$u8" || prop.type == "$s8") {
-                *(reinterpret_cast<u8*>(x.second.ptr)) = prop.value.byte;
+                *(static_cast<u8*>(x.second.ptr)) = prop.value.byte;
             } else if (prop.type == "$u16" || prop.type == "$s16") {
-                *(reinterpret_cast<u16*>(x.second.ptr)) = prop.value.word;
+                *(static_cast<u16*>(x.second.ptr)) = prop.value.word;
             } else if (prop.type == "$u32" || prop.type == "$s32") {
-                *(reinterpret_cast<u32*>(x.second.ptr)) = prop.value.dword;
+                *(static_cast<u32*>(x.second.ptr)) = prop.value.dword;
             } else if (prop.type == "$u64" || prop.type == "$s64") {
-                *(reinterpret_cast<u64*>(x.second.ptr)) = prop.value.qword;
+                *(static_cast<u64*>(x.second.ptr)) = prop.value.qword;
             } else if (prop.type == "$float") {
-                *(reinterpret_cast<float*>(x.second.ptr)) = prop.value.singleFloat;
+                *(static_cast<float*>(x.second.ptr)) = prop.value.singleFloat;
             } else if (prop.type == "$double") {
-                *(reinterpret_cast<double*>(x.second.ptr)) = prop.value.doubleFloat;
+                *(static_cast<double*>(x.second.ptr)) = prop.value.doubleFloat;
             }
         } else if (prop.type.at(0) == '#') {
             if (prop.type == "#u8" || prop.type == "#s8") {
-                Vector<u8> *vector = reinterpret_cast<Vector<u8>*>(x.second.ptr);
-                Vector<u8> *vectorRead = reinterpret_cast<Vector<u8>*>(prop.value.ptr.get());
+                Vector<u8> *vector = static_cast<Vector<u8>*>(x.second.ptr);
+                Vector<u8> *vectorRead = static_cast<Vector<u8>*>(prop.value.ptr.get());
                 *vector = *vectorRead;
             } else if (prop.type == "#u16" || prop.type == "#s16") {
-                Vector<u16> *vector = reinterpret_cast<Vector<u16>*>(x.second.ptr);
-                Vector<u16> *vectorRead = reinterpret_cast<Vector<u16>*>(prop.value.ptr.get());
+                Vector<u16> *vector = static_cast<Vector<u16>*>(x.second.ptr);
+                Vector<u16> *vectorRead = static_cast<Vector<u16>*>(prop.value.ptr.get());
                 *vector = *vectorRead;
             } else if (prop.type == "#u32" || prop.type == "#s32") {
-                Vector<u32> *vector = reinterpret_cast<Vector<u32>*>(x.second.ptr);
-                Vector<u32> *vectorRead = reinterpret_cast<Vector<u32>*>(prop.value.ptr.get());
+                Vector<u32> *vector = static_cast<Vector<u32>*>(x.second.ptr);
+                Vector<u32> *vectorRead = static_cast<Vector<u32>*>(prop.value.ptr.get());
                 *vector = *vectorRead;
             } else if (prop.type == "#s64" || prop.type == "#u64") {
-                Vector<u64> *vector = reinterpret_cast<Vector<u64>*>(x.second.ptr);
-                Vector<u64> *vectorRead = reinterpret_cast<Vector<u64>*>(prop.value.ptr.get());
+                Vector<u64> *vector = static_cast<Vector<u64>*>(x.second.ptr);
+                Vector<u64> *vectorRead = static_cast<Vector<u64>*>(prop.value.ptr.get());
                 *vector = *vectorRead;
             } else if (prop.type == "#float") {
-                Vector<float> *vector = reinterpret_cast<Vector<float>*>(x.second.ptr);
-                Vector<float> *vectorRead = reinterpret_cast<Vector<float>*>(prop.value.ptr.get());
+                Vector<float> *vector = static_cast<Vector<float>*>(x.second.ptr);
+                Vector<float> *vectorRead = static_cast<Vector<float>*>(prop.value.ptr.get());
                 *vector = *vectorRead;
             } else if (prop.type == "#double") {
-                Vector<double> *vector = reinterpret_cast<Vector<double>*>(x.second.ptr);
-                Vector<double> *vectorRead = reinterpret_cast<Vector<double>*>(prop.value.ptr.get());
+                Vector<double> *vector = static_cast<Vector<double>*>(x.second.ptr);
+                Vector<double> *vectorRead = static_cast<Vector<double>*>(prop.value.ptr.get());
                 *vector = *vectorRead;
             }
         } else {
-            SharedPtr<void> *ptr = reinterpret_cast<SharedPtr<void>*>(x.second.ptr);
+            SharedPtr<void> *ptr = static_cast<SharedPtr<void>*>(x.second.ptr);
             *ptr = prop.value.ptr;
         }
     }

@@ -7,6 +7,7 @@
 TDM_NAMESPACE
 
 ClusterLoop::ClusterLoop(int nodes, u32 ourNodeId, TcpManager *tcp, DataMarshaller *marshaller) :
+    m_started(false), m_startedCluster(false), m_clusterHandshakes(0),
     m_nodeCount(nodes), m_ourNodeId(ourNodeId), m_tcp(tcp), m_marshaller(marshaller)
 {
     if (nodes == 1) {
