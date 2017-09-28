@@ -119,17 +119,21 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    TDM::Cluster cluster(nodes, nodeId, listenAddress);
+    TDM::Cluster *cluster = new TDM::Cluster(nodes, nodeId, listenAddress);
 
-    ConsumerProducer worker(cluster, "consumer-producer", nodeId);
-    ConsumerProducer worker2(cluster, "drugi-monitor", nodes.size() + nodeId);
+    ConsumerProducer *worker = new ConsumerProducer(cluster, "consumer-producer", nodeId);
+    ConsumerProducer *worker2 = new ConsumerProducer(cluster, "drugi-monitor", nodes.size() + nodeId);
 
-    worker.startThreads();
-    worker2.startThreads();
+    worker->startThreads();
+    worker2->startThreads();
 
     while (1) {
         // ...
     }
+
+    delete worker;
+    delete worker2;
+    delete cluster;
 
     return 0;
 }
