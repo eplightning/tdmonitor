@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
 
     TDM::Cluster *cluster = new TDM::Cluster(nodes, nodeId, listenAddress);
 
-    ConsumerProducer *worker = new ConsumerProducer(cluster, "consumer-producer", nodeId);
-    ConsumerProducer *worker2 = new ConsumerProducer(cluster, "drugi-monitor", nodes.size() + nodeId);
+    ConsumerProducer *worker = new ConsumerProducer(*cluster, "consumer-producer", nodeId);
+    ConsumerProducer *worker2 = new ConsumerProducer(*cluster, "drugi-monitor", nodes.size() + nodeId);
 
     worker->startThreads();
     worker2->startThreads();
