@@ -17,6 +17,10 @@ int SocketUtils::createListenSocket(const String &address, u16 port, ConnectionP
     if (sock == -1)
         return -1;
 
+    int enable = 1;
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+        return -1;
+
     sockaddr_storage addr;
     socklen_t addrLen = (proto == CPIpv4) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
 

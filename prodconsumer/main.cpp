@@ -10,9 +10,10 @@
 class ConsumerProducer {
 public:
     ConsumerProducer(TDM::Cluster &cluster, const std::string &name, int toProduce) :
-        m_stop(false), m_toProduce(toProduce), m_monitor(cluster, name)
+        m_stop(false), m_toProduce(toProduce), m_num(0), m_monitor(cluster, name)
     {
         m_monitor.property("messages", m_messages);
+        m_monitor.property("seqid", m_num);
         m_condFree = m_monitor.condition("free");
         m_condData = m_monitor.condition("data");
         m_monitor.create();
@@ -31,8 +32,6 @@ public:
 
     void consume()
     {
-        std::cout << "Konsument przed lockiem" << std::endl;
-
         m_monitor.lock();
 
         while (m_messages.size() == 0) {
@@ -40,18 +39,18 @@ public:
             m_condData->wait();
         }
 
+        std::cout << "Konsument: SeqID " << m_num++ << std::endl;
+
         std::cout << "Skonsumowano: " << m_messages.back() << std::endl;
         m_messages.pop_back();
 
         m_condFree->signal();
 
         m_monitor.unlock();
-        std::cout << "Konsument po unlocku" << std::endl;
     }
 
     void produce()
     {
-        std::cout << "Producent przed lockiem" << std::endl;
         m_monitor.lock();
 
         while (m_messages.size() == 10) {
@@ -59,13 +58,14 @@ public:
             m_condFree->wait();
         }
 
+        std::cout << "Konsument: SeqID " << m_num++ << std::endl;
+
         std::cout << "Wyprodukowano: " << m_toProduce << std::endl;
         m_messages.push_back(m_toProduce);
 
         m_condData->signal();
 
         m_monitor.unlock();
-        std::cout << "Producent po unlocku" << std::endl;
     }
 
     void startThreads()
@@ -89,6 +89,7 @@ private:
     std::thread m_consumerThread;
     int m_toProduce;
     std::vector<int> m_messages;
+    int m_num;
     TDM::Monitor m_monitor;
     std::unique_ptr<TDM::MonitorConditionVariable> m_condFree;
     std::unique_ptr<TDM::MonitorConditionVariable> m_condData;
