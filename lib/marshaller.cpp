@@ -422,12 +422,16 @@ void MarshallHelper::write(s64 data)
 
 void MarshallHelper::write(float data)
 {
-    write(*(reinterpret_cast<u32*>(&data)));
+    union { float f; u32 u; };
+    f = data;
+    write(u);
 }
 
 void MarshallHelper::write(double data)
 {
-    write(*(reinterpret_cast<u64*>(&data)));
+    union { float f; u64 u; };
+    f = data;
+    write(u);
 }
 
 void MarshallHelper::write(const String &data)
